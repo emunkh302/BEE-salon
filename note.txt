@@ -1,0 +1,39 @@
+user auth woulde be like this but you need make sure for future extention of roles user shop owner 
+warehouse owner these i may add in future code must be easy maintain: 
+UserRole:
+
+    Contractor = 'contractor',
+
+    Subcontractor = 'subcontractor',
+
+    Admin = 'admin',
+
+
+User informations:
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+
+    passwordHash: { type: String, required: true },
+
+    role: { type: String, required: true },
+
+    firstName: { type: String, required: true },
+
+    lastName: { type: String, required: true },
+
+    companyName: { type: String },
+
+    phoneNumber: { type: String },
+
+    userName: {}
+    userProfileImage: {} // Optional, but default image
+    Bio: {} // Optional,
+    
+    Create user, login, logout, deactivate own user account
+    Admin can create admin, Contractor and subcontractor.
+
+
+    
+
+
+    
+
