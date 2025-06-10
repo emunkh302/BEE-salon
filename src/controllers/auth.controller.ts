@@ -1,89 +1,69 @@
 // src/controllers/auth.controller.ts
 import { Request, Response, NextFunction } from 'express';
-import { AuthService, IRegisterData } from '../services/auth.service';
-import { UserRole } from '../config/roles';
+import { AuthService, IRegisterClientData, IRegisterArtistData, ILoginData } from '../services/auth.service';
 
 const authService = new AuthService();
 
-export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    console.log('[AUTH CONTROLLER] Register request received at:', new Date().toLocaleTimeString());
-    
+// --- Controller for Client Registration ---
+export const registerClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        console.log('[AUTH CONTROLLER] Entering TRY block.');
-        const {
-            email,
-            password,
-            firstName,
-            lastName,
-            userName,
-            role,
-            companyName,
-            phoneNumber,
-        } = req.body;
-
-        console.log('[AUTH CONTROLLER] Request body parsed:', { email, userName });
-
-        if (!email || !password || !firstName || !lastName || !userName) {
-            console.log('[AUTH CONTROLLER] Validation failed: Missing required fields.');
-            res.status(400).json({ message: 'Email, password, firstName, lastName, and userName are required.' });
+        const { email, password, firstName, lastName, phoneNumber } = req.body;
+        if (!email || !password || !firstName || !lastName || !phoneNumber) {
+            res.status(400).json({ message: 'All fields are required for client registration.' });
             return;
         }
-        
-        if (role && !Object.values(UserRole).includes(role as UserRole)) {
-            console.log('[AUTH CONTROLLER] Validation failed: Invalid role.');
-            res.status(400).json({ message: `Invalid role provided. Supported roles are: ${Object.values(UserRole).join(', ')}` });
-            return;
-        }
-
-        console.log('[AUTH CONTROLLER] Validation passed. Preparing user data.');
-        const userData: IRegisterData = {
-            email,
-            password_to_hash: password,
-            firstName,
-            lastName,
-            userName,
-            role: role as UserRole,
-            companyName,
-            phoneNumber,
-        };
-
-        console.log('[AUTH CONTROLLER] Calling authService.registerUser...');
-        const registeredUser = await authService.registerUser(userData);
-        console.log('[AUTH CONTROLLER] authService.registerUser successfully returned.');
-
-        // If we get here, the user was created successfully. Send 201.
-        console.log('[AUTH CONTROLLER] Sending 201 success response.');
-        res.status(201).json({
-            message: 'User registered successfully.',
-            user: {
-                id: registeredUser._id,
-                email: registeredUser.email,
-                firstName: registeredUser.firstName,
-                lastName: registeredUser.lastName,
-                userName: registeredUser.userName,
-                role: registeredUser.role,
-            }
-        });
-        console.log('[AUTH CONTROLLER] Success response sent.');
+        const clientData: IRegisterClientData = { email, password_to_hash: password, firstName, lastName, phoneNumber };
+        const newClient = await authService.registerClient(clientData);
+        res.status(201).json({ message: 'Client registered successfully.', user: newClient });
 
     } catch (error: any) {
-        console.error('[AUTH CONTROLLER] Entering CATCH block. Error:', error);
-
         if (error.name === 'MongoServerError' && error.code === 11000) {
-            const field = Object.keys(error.keyValue)[0];
-            console.log(`[AUTH CONTROLLER] Sending 409 duplicate key error for field: ${field}`);
-            res.status(409).json({ message: `An account with that ${field} already exists.` });
+            res.status(409).json({ message: 'An account with this email already exists.' });
             return;
         }
+        next(error);
+    }
+};
 
-        if (error.name === 'ValidationError') {
-            const messages = Object.values(error.errors).map((err: any) => err.message);
-            console.log('[AUTH CONTROLLER] Sending 400 validation error.');
-            res.status(400).json({ message: 'Validation failed', errors: messages });
+// --- Controller for Artist Registration ---
+export const registerArtist = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { email, password, firstName, lastName, phoneNumber, experienceYears } = req.body;
+        if (!email || !password || !firstName || !lastName || !phoneNumber || experienceYears === undefined) {
+            res.status(400).json({ message: 'All fields, including experience years, are required for artist registration.' });
             return;
         }
+        const artistData: IRegisterArtistData = { email, password_to_hash: password, firstName, lastName, phoneNumber, experienceYears };
+        const newArtist = await authService.registerArtist(artistData);
+        res.status(201).json({ message: 'Artist registration submitted successfully. Awaiting admin approval.', user: newArtist });
 
-        console.log('[AUTH CONTROLLER] Passing error to global error handler via next(error).');
+    } catch (error: any) {
+        if (error.name === 'MongoServerError' && error.code === 11000) {
+            res.status(409).json({ message: 'An account with this email already exists.' });
+            return;
+        }
+        next(error);
+    }
+};
+
+// --- Controller for Login (Unchanged) ---
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            res.status(400).json({ message: 'Email and password are required.' });
+            return;
+        }
+        const loginData: ILoginData = { email, password_from_user: password };
+        const loginResponse = await authService.loginUser(loginData);
+        res.status(200).json(loginResponse);
+
+    } catch (error: any) {
+        // Handle specific login errors from the service
+        if (error.message.includes('Invalid credentials') || error.message.includes('deactivated') || error.message.includes('not yet approved')) {
+            res.status(401).json({ message: error.message });
+            return;
+        }
         next(error);
     }
 };
