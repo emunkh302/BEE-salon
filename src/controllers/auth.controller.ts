@@ -4,7 +4,7 @@ import { AuthService, IRegisterClientData, IRegisterArtistData, ILoginData } fro
 
 const authService = new AuthService();
 
-// --- Controller for Client Registration ---
+// Client registration controller (no changes needed)
 export const registerClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { email, password, firstName, lastName, phoneNumber } = req.body;
@@ -25,28 +25,36 @@ export const registerClient = async (req: Request, res: Response, next: NextFunc
     }
 };
 
-// --- Controller for Artist Registration ---
+// --- Controller for Artist Registration (FIXED) ---
 export const registerArtist = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { email, password, firstName, lastName, phoneNumber, experienceYears } = req.body;
-        if (!email || !password || !firstName || !lastName || !phoneNumber || experienceYears === undefined) {
-            res.status(400).json({ message: 'All fields, including experience years, are required for artist registration.' });
+        // FIX: Add userName to the destructured properties and validation
+        const { email, password, firstName, lastName, phoneNumber, userName, experienceYears } = req.body;
+
+        if (!email || !password || !firstName || !lastName || !phoneNumber || !userName || experienceYears === undefined) {
+            res.status(400).json({ message: 'All fields, including userName and experience years, are required for artist registration.' });
             return;
         }
-        const artistData: IRegisterArtistData = { email, password_to_hash: password, firstName, lastName, phoneNumber, experienceYears };
+        
+        // FIX: Pass userName to the service
+        const artistData: IRegisterArtistData = { email, password_to_hash: password, firstName, lastName, phoneNumber, userName, experienceYears };
         const newArtist = await authService.registerArtist(artistData);
+        
         res.status(201).json({ message: 'Artist registration submitted successfully. Awaiting admin approval.', user: newArtist });
 
     } catch (error: any) {
         if (error.name === 'MongoServerError' && error.code === 11000) {
-            res.status(409).json({ message: 'An account with this email already exists.' });
+            // Updated to handle both email and userName duplicates
+            const field = Object.keys(error.keyValue)[0];
+            res.status(409).json({ message: `An account with this ${field} already exists.` });
             return;
         }
         next(error);
     }
 };
 
-// --- Controller for Login (Unchanged) ---
+
+// Login controller (no changes needed)
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { email, password } = req.body;
@@ -59,7 +67,6 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
         res.status(200).json(loginResponse);
 
     } catch (error: any) {
-        // Handle specific login errors from the service
         if (error.message.includes('Invalid credentials') || error.message.includes('deactivated') || error.message.includes('not yet approved')) {
             res.status(401).json({ message: error.message });
             return;

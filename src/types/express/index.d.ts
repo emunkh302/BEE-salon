@@ -1,13 +1,17 @@
 // src/types/express/index.d.ts
 
-// Import the User interface from your model
+// This file uses declaration merging to add a custom 'user' property 
+// to the global Express Request interface.
+
+// Import the full User interface from your model to ensure type safety.
 import { IUser } from '../../models/User.model';
 
-// Use declaration merging to add a 'user' property to the Express Request interface
 declare global {
   namespace Express {
     export interface Request {
-      user?: IUser; // The user property will be optional and of type IUser
+      // The user property will be optional and of type IUser.
+      // It will be populated by our 'protect' middleware upon successful authentication.
+      user?: IUser;
     }
   }
 }
