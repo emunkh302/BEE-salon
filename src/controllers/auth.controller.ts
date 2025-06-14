@@ -4,7 +4,7 @@ import { AuthService, IRegisterClientData, IRegisterArtistData, ILoginData } fro
 
 const authService = new AuthService();
 
-// Client registration controller (no changes needed)
+// This controller is working correctly.
 export const registerClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { email, password, firstName, lastName, phoneNumber } = req.body;
@@ -18,25 +18,28 @@ export const registerClient = async (req: Request, res: Response, next: NextFunc
 
     } catch (error: any) {
         if (error.name === 'MongoServerError' && error.code === 11000) {
-            res.status(409).json({ message: 'An account with this email already exists.' });
+            const field = Object.keys(error.keyValue)[0];
+            res.status(409).json({ message: `An account with this ${field} already exists.` });
             return;
         }
         next(error);
     }
 };
 
-// --- Controller for Artist Registration (FIXED) ---
+// --- Controller for Artist Registration ---
+// This is the controller that needs careful review.
 export const registerArtist = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        // FIX: Add userName to the destructured properties and validation
+        // 1. Ensure 'userName' is being correctly extracted from the request body.
         const { email, password, firstName, lastName, phoneNumber, userName, experienceYears } = req.body;
 
+        // 2. Add 'userName' to the validation check. This is a critical step.
         if (!email || !password || !firstName || !lastName || !phoneNumber || !userName || experienceYears === undefined) {
             res.status(400).json({ message: 'All fields, including userName and experience years, are required for artist registration.' });
             return;
         }
         
-        // FIX: Pass userName to the service
+        // 3. Ensure 'userName' is included when passing data to the service.
         const artistData: IRegisterArtistData = { email, password_to_hash: password, firstName, lastName, phoneNumber, userName, experienceYears };
         const newArtist = await authService.registerArtist(artistData);
         
@@ -44,7 +47,6 @@ export const registerArtist = async (req: Request, res: Response, next: NextFunc
 
     } catch (error: any) {
         if (error.name === 'MongoServerError' && error.code === 11000) {
-            // Updated to handle both email and userName duplicates
             const field = Object.keys(error.keyValue)[0];
             res.status(409).json({ message: `An account with this ${field} already exists.` });
             return;
@@ -54,7 +56,7 @@ export const registerArtist = async (req: Request, res: Response, next: NextFunc
 };
 
 
-// Login controller (no changes needed)
+// Login controller
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { email, password } = req.body;

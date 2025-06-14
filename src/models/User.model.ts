@@ -1,9 +1,7 @@
 // src/models/User.model.ts
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { UserRole } from '../config/roles'; // Import from the central config file
-
-// NOTE: The UserRole enum definition has been removed from this file.
+import { UserRole } from '../config/roles'; // Ensure this is the only source for UserRole
 
 export interface IUser extends Document {
     email: string;
@@ -11,6 +9,8 @@ export interface IUser extends Document {
     role: UserRole;
     firstName: string;
     lastName: string;
+    // This field is critical.
+    userName: string;
     phoneNumber: string;
     profileImage?: string;
     isActive: boolean;
@@ -26,6 +26,11 @@ const UserSchema: Schema<IUser> = new Schema(
         role: { type: String, enum: Object.values(UserRole), required: true },
         firstName: { type: String, required: true, trim: true },
         lastName: { type: String, required: true, trim: true },
+        
+        // REVIEW THIS LINE CAREFULLY IN YOUR LOCAL FILE
+        // It must be 'userName' exactly, with the correct options.
+        userName: { type: String, required: true, unique: true, trim: true, lowercase: true },
+
         phoneNumber: { type: String, required: true, trim: true },
         profileImage: { type: String, default: 'https://placehold.co/400x400/000000/FFFFFF?text=User' },
         isActive: { type: Boolean, default: true },
