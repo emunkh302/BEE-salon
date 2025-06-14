@@ -3,7 +3,8 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import connectDB from './utils/connectDB';
 import authRoutes from './routes/auth.routes';
-import userRoutes from './routes/user.routes'; // Import the new user routes
+import userRoutes from './routes/user.routes';
+import adminRoutes from './routes/admin.routes';
 
 dotenv.config();
 
@@ -16,8 +17,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // --- API Routes ---
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes); // Mount the user routes
-
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
 
 // A simple root route
 app.get('/', (req: Request, res: Response) => {
