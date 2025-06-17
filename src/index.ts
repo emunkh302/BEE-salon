@@ -5,11 +5,12 @@ import connectDB from './utils/connectDB';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import adminRoutes from './routes/admin.routes';
+import serviceRoutes from './routes/service.routes'; // 1. Import service routes
 
 dotenv.config();
 
 const app: Application = express();
-const port: number = parseInt(process.env.PORT as string, 10) || 8888; // Using port 8888
+const port: number = parseInt(process.env.PORT as string, 10) || 8888;
 
 // Core Middleware
 app.use(express.json());
@@ -19,6 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/services', serviceRoutes); // 2. Mount the service routes
 
 // A simple root route
 app.get('/', (req: Request, res: Response) => {
@@ -32,7 +34,6 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
         message: 'An unexpected error occurred on the server.',
     });
 });
-
 
 const startServer = async () => {
     try {
