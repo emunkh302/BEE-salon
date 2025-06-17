@@ -5,7 +5,8 @@ import connectDB from './utils/connectDB';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import adminRoutes from './routes/admin.routes';
-import serviceRoutes from './routes/service.routes'; // 1. Import service routes
+import serviceRoutes from './routes/service.routes';
+import bookingRoutes from './routes/booking.routes'; // 1. Import booking routes
 
 dotenv.config();
 
@@ -20,7 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/services', serviceRoutes); // 2. Mount the service routes
+app.use('/api/services', serviceRoutes);
+app.use('/api/bookings', bookingRoutes); // 2. Mount the booking routes
 
 // A simple root route
 app.get('/', (req: Request, res: Response) => {
