@@ -6,7 +6,8 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import adminRoutes from './routes/admin.routes';
 import serviceRoutes from './routes/service.routes';
-import bookingRoutes from './routes/booking.routes'; // 1. Import booking routes
+import bookingRoutes from './routes/booking.routes';
+import reviewRoutes from './routes/review.routes'; // 1. Import review routes
 
 dotenv.config();
 
@@ -22,7 +23,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/services', serviceRoutes);
-app.use('/api/bookings', bookingRoutes); // 2. Mount the booking routes
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/reviews', reviewRoutes); // 2. Mount the review routes
 
 // A simple root route
 app.get('/', (req: Request, res: Response) => {
