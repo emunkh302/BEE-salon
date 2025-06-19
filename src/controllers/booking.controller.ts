@@ -1,6 +1,6 @@
 // src/controllers/booking.controller.ts
 import { Request, Response, NextFunction } from 'express';
-import Booking from '../models/Booking.model';
+import Booking, { BookingStatus } from '../models/Booking.model';
 import Service from '../models/Service.model';
 import { UserRole } from '../config/roles';
 
@@ -17,16 +17,12 @@ export const createBooking = async (req: Request, res: Response, next: NextFunct
             return;
         }
 
-        // Fetch the service to get its price for calculating deposit
         const service = await Service.findById(serviceId);
         if (!service) {
             res.status(404).json({ message: 'Service not found.' });
             return;
         }
 
-        // --- Payment Logic (Simplified for now) ---
-        // In a real app, you would integrate with Stripe here to process the deposit.
-        // For now, we'll just calculate a 20% deposit.
         const depositAmount = service.price * 0.20;
         const totalAmount = service.price;
 
@@ -76,6 +72,55 @@ export const getMyBookings = async (req: Request, res: Response, next: NextFunct
             count: bookings.length,
             data: bookings
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Update a booking status (by Artist)
+// @route   PUT /api/bookings/:id/status
+// @access  Private/Artist
+export const updateBookingStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { status } = req.body; // Expecting { "status": "Confirmed" } or { "status": "Cancelled" }
+        const bookingId = req.params.id;
+        const artistId = req.user?._id;
+
+        // Find the booking by its ID
+        const booking = await Booking.findById(bookingId);
+
+        if (!booking) {
+            res.status(404).json({ message: 'Booking not found.' });
+            return;
+        }
+
+        // Ensure the logged-in user is the artist assigned to this booking
+        if (booking.artist.toString() !== artistId?.toString()) {
+            res.status(403).json({ message: 'You are not authorized to update this booking.' });
+            return;
+        }
+        
+        // Artists can only confirm or cancel. Completing a booking might be another endpoint.
+        const allowedStatuses = [BookingStatus.CONFIRMED, BookingStatus.CANCELLED];
+        if (!status || !allowedStatuses.includes(status)) {
+            res.status(400).json({ message: `Invalid status. Artists can only set status to: ${allowedStatuses.join(', ')}` });
+            return;
+        }
+
+        const updatedBooking = await Booking.findByIdAndUpdate(
+            bookingId, 
+            { status: status }, 
+            { new: true, runValidators: true }
+        );
+
+        // Here you would also trigger a real-time notification to the client
+        // req.io.emit('booking_update', { ... });
+
+        res.status(200).json({
+            message: `Booking successfully updated to ${status}.`,
+            data: updatedBooking
+        });
+
     } catch (error) {
         next(error);
     }

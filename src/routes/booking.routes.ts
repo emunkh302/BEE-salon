@@ -1,6 +1,6 @@
 // src/routes/booking.routes.ts
 import { Router } from 'express';
-import { createBooking, getMyBookings } from '../controllers/booking.controller';
+import { createBooking, getMyBookings, updateBookingStatus } from '../controllers/booking.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
 import { UserRole } from '../config/roles';
 
@@ -20,5 +20,9 @@ router.post('/', authorize(UserRole.CLIENT), asyncHandler(createBooking));
 
 // Both clients and artists can view their own bookings
 router.get('/my-bookings', asyncHandler(getMyBookings));
+
+// An artist can update the status of a booking
+router.put('/:id/status', authorize(UserRole.ARTIST), asyncHandler(updateBookingStatus));
+
 
 export default router;
