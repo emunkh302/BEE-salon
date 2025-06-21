@@ -1,0 +1,32 @@
+Step 1: Install and Configure the Stripe CLI
+Install the Stripe CLI: Follow the instructions for your operating system on the official Stripe documentation.
+Link to Your Stripe Account: Open a new terminal window and run:
+Bash
+
+stripe login
+This will open your web browser and ask you to log in to Stripe to link your account.
+Step 2: Start Forwarding Events
+Keep your Node.js server running (npm start) in one terminal.
+In your second terminal (the one with the Stripe CLI), run the following command. This tells Stripe to listen for events and forward them to your local webhook endpoint.
+Bash
+
+stripe listen --forward-to http://localhost:8888/api/webhooks/stripe
+The Stripe CLI will give you a webhook signing secret that starts with whsec_.... Copy this secret.
+Open your .env file and add/update the STRIPE_WEBHOOK_SECRET with the value you just copied. You must restart your server after changing the .env file for the change to take effect.
+Step 3: Trigger a Payment Event
+Now you need to simulate a successful payment to trigger the payment_intent.succeeded event.
+
+Create a Booking: Use Postman to run your "Create Booking" test case. This will generate a new paymentIntentClientSecret.
+Simulate Payment: In a real application, your frontend would use this secret to confirm the payment. To simulate this manually, you can use a test payment method in another Stripe API call or, more simply, use the Stripe CLI again. In a third terminal window, run:
+Bash
+
+stripe payment_intents confirm pi_... --payment-method pm_card_visa
+(Replace pi_... with the id part of the paymentIntentClientSecret from your booking response).
+Step 4: Observe the Result
+Stripe CLI Terminal: You will see a log that an event payment_intent.succeeded was received and forwarded to your server with a 200 OK status.
+Node.js Server Terminal: You will see the log message from your webhook controller: ✅ PaymentIntent was successful for: pi_....
+Database: Check your bookings collection in MongoDB. The booking associated with that payment intent should now have its depositStatus updated to "Paid".
+
+
+
+stripe payment_intents confirm pi_3RcHvE4D4nyTbo1q0RRm79wo --payment-method pm_card_visa

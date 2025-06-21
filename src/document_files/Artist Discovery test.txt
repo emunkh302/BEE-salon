@@ -1,0 +1,30 @@
+Prerequisites for Testing:
+Have Approved Artists: Make sure you have at least two artists who have been approved by an admin.
+Artists Must Have Services:
+Log in as Artist #1 and create a service with the category "Nail".
+Log in as Artist #2 and create a service with the category "Lash".
+Test Suite: Artist Discovery
+Test Case 1: List All Approved Artists (No Filter)
+Objective: Verify that the public endpoint returns a list of all artists whose status is "approved".
+Method: GET
+URL: http://localhost:8888/api/artists
+Authorization: Set to "No Auth" (this is a public route).
+Expected Result:
+Status Code: 200 OK
+Response Body: A JSON object with a count and a data array that includes all your approved artists. Each artist object should contain their details, a list of their services, and their average rating.
+Test Case 2: Filter Artists by Service Category (Success)
+Objective: Verify that you can filter the artist list by the services they offer.
+Method: GET
+URL: http://localhost:8888/api/artists?category=Nail
+Authorization: Set to "No Auth".
+Expected Result:
+Status Code: 200 OK
+Response Body: A JSON object where the data array only includes artists who offer a service with the category "Nail".
+Test Case 3: Filter Artists by a Different Category
+Objective: Verify filtering works for other categories.
+Method: GET
+URL: http://localhost:8888/api/artists?category=Lash
+Authorization: Set to "No Auth".
+Expected Result:
+Status Code: 200 OK
+Response Body: A JSON object where the data array only includes artists who offer a service with the category "Lash".
