@@ -458,4 +458,5 @@ JSON
     },
     "paymentIntentClientSecret": "pi_..._secret_..." // A long, secret key from Stripe
 }
-If you receive this response, it means the backend has successfully integrated with Stripe. The next step in a full application would be to handle webhooks from Stripe to update the depositStatus to "Paid" after the client uses the client_secret to complete their payment on the frontend.
+If you receive this response, it means the backend has successfully integrated with Stripe. 
+The next step in a full application would be to handle webhooks from Stripe to update the depositStatus to "Paid" after the client uses the client_secret to complete their payment on the frontend.

@@ -29,4 +29,4 @@ Database: Check your bookings collection in MongoDB. The booking associated with
 
 
 
-stripe payment_intents confirm pi_3RcHvE4D4nyTbo1q0RRm79wo --payment-method pm_card_visa
+stripe payment_intents confirm pi_3RcHvE4D4nyTbo1asTgm79wo --payment-method pm_card_visa

@@ -1,0 +1,335 @@
+E-Beauty Salon - API Documentation
+1. Introduction
+This document provides a comprehensive guide for frontend developers building a client application (Web or React Native) for the E-Beauty Salon platform. It covers data models, authentication, all available API endpoints, and real-time event handling.
+
+Base URL: All API endpoints are prefixed with http://localhost:8888/api.
+
+2. Authentication
+Authentication is handled via JSON Web Tokens (JWT). A user (Client, Artist, or Admin) sends their credentials to the login endpoint, and if successful, receives a token. This token must be included in the Authorization header for all protected endpoints.
+
+Header Format: Authorization: Bearer <your_jwt_token>
+
+Auth Flow:
+A user registers via /auth/register/client or /auth/register/artist.
+
+The user logs in via /auth/login to receive a JWT.
+
+The frontend application stores this JWT securely (e.g., in secure storage).
+
+For every request to a protected endpoint, the frontend adds the Authorization: Bearer <token> header.
+
+3. Data Models
+These are the primary data structures you will receive from the API.
+
+User
+Represents a client, artist, or admin.
+
+{
+  "id": "6851dd0fb7f5226b50e799d3",
+  "email": "sandra.c@example.com",
+  "role": "client", // or "artist", "admin"
+  "firstName": "Sandra",
+  "lastName": "Client"
+}
+
+Artist Profile (Public View)
+This is the data structure returned when listing artists.
+
+{
+  "_id": "684cec95945abb96e173c398", // User ID
+  "firstName": "Bob",
+  "lastName": "Artist",
+  "profileImage": "https://placehold.co/400x400/...",
+  "bio": "Experienced nail artist specializing in gel and acrylics.",
+  "experienceYears": 5,
+  "services": [ /* Array of Service objects */ ],
+  "averageRating": 4.5,
+  "reviewCount": 12
+}
+
+Service
+Represents a service offered by an artist.
+
+{
+  "_id": "6851df9a3445c60a41ee15e6",
+  "artist": "684cec95945abb96e173c398",
+  "category": "Nail", // Nail, Lash, Manicure, etc.
+  "name": "Classic Gel Manicure",
+  "description": "A long-lasting gel polish manicure...",
+  "price": 4500, // In cents (e.g., $45.00)
+  "duration": 60 // In minutes
+}
+
+Booking
+Represents a booking made by a client.
+
+{
+  "_id": "6851e0e8b7f5226b50e79a02",
+  "client": { "_id": "...", "firstName": "Sandra", "lastName": "Client" },
+  "artist": { "_id": "...", "firstName": "Bob", "lastName": "Artist" },
+  "service": { "_id": "...", "name": "Classic Gel Manicure", ... },
+  "location": { "address": "123 Main St", ... },
+  "bookingTime": "2025-08-15T14:00:00.000Z",
+  "status": "Confirmed", // Pending, Confirmed, Completed, Cancelled
+  "depositStatus": "Paid", // Pending, Paid, Refunded
+  "totalAmount": 4500
+}
+
+4. API Endpoints
+4.1 Authentication (/api/auth)
+Register Client
+Endpoint: POST /register/client
+
+Access: Public
+
+Request Body:
+
+{
+  "email": "new.client@example.com",
+  "password": "password123",
+  "firstName": "New",
+  "lastName": "Client",
+  "phoneNumber": "555-123-4567"
+}
+
+Success (201): {"message": "Client registered successfully.", "user": { ... }}
+
+Register Artist
+Endpoint: POST /register/artist
+
+Access: Public
+
+Request Body:
+
+{
+  "email": "new.artist@example.com",
+  "password": "password123",
+  "firstName": "New",
+  "lastName": "Artist",
+  "userName": "newartist",
+  "phoneNumber": "555-765-4321",
+  "experienceYears": 3
+}
+
+Success (201): {"message": "Artist registration submitted successfully. Awaiting admin approval.", "user": { ... }}
+
+Login
+Endpoint: POST /login
+
+Access: Public
+
+Request Body:
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+
+Success (200):
+
+{
+  "token": "a_long_jwt_string_...",
+  "user": { /* User object */ }
+}
+
+Error (401): {"message": "Invalid credentials..."} or {"message": "Artist account is not yet approved."}
+
+4.2 Artist Discovery (/api/artists)
+List Artists
+Endpoint: GET /
+
+Access: Public
+
+Query Parameters:
+
+category (optional): Filter artists by service category (e.g., ?category=Nail).
+
+Success (200): {"count": 1, "data": [ /* Array of Artist Profile objects */ ]}
+
+4.3 User Profile (/api/users)
+Get My Profile
+Endpoint: GET /me
+
+Access: Private (Any logged-in user)
+
+Success (200): {"user": { ... }} (Full User document from database)
+
+4.4 Service Management (/api/services)
+Create a Service
+Endpoint: POST /
+
+Access: Private (Artist only)
+
+Request Body:
+
+{
+  "category": "Nail",
+  "name": "Acrylic Full Set",
+  "description": "Full set of acrylic nails with choice of shape and color.",
+  "price": 6000,
+  "duration": 90
+}
+
+Success (201): {"message": "Service created successfully.", "data": { ... }}
+
+Get My Services
+Endpoint: GET /my-services
+
+Access: Private (Artist only)
+
+Success (200): {"count": 2, "data": [ /* Array of Service objects */ ]}
+
+Update a Service
+Endpoint: PUT /:id
+
+Access: Private (Artist only)
+
+Request Body: (Any fields from the Service model you want to change)
+
+{
+  "price": 6500
+}
+
+Success (200): {"message": "Service updated successfully.", "data": { ... }}
+
+Delete a Service
+Endpoint: DELETE /:id
+
+Access: Private (Artist only)
+
+Success (200): {"message": "Service deleted successfully."}
+
+4.5 Booking Management (/api/bookings)
+Create a Booking
+Endpoint: POST /
+
+Access: Private (Client only)
+
+Request Body:
+
+{
+  "artistId": "artist_user_id",
+  "serviceId": "service_id_from_artist",
+  "location": { "address": "...", "city": "...", "state": "...", "zipCode": "..." },
+  "bookingTime": "2025-09-20T11:00:00.000Z"
+}
+
+Success (201): Returns the booking object and a paymentIntentClientSecret from Stripe. The frontend must use this secret to finalize the deposit payment.
+
+{
+  "message": "Booking request created. Please complete the deposit payment.",
+  "booking": { ... },
+  "paymentIntentClientSecret": "pi_..._secret_..."
+}
+
+Get My Bookings
+Endpoint: GET /my-bookings
+
+Access: Private (Client or Artist)
+
+Success (200): {"count": 3, "data": [ /* Array of Booking objects */ ]}
+
+Update Booking Status
+Endpoint: PUT /:id/status
+
+Access: Private (Artist only)
+
+Request Body:
+
+{
+  "status": "Confirmed" // or "Completed"
+}
+
+Success (200): {"message": "Booking successfully updated...", "data": { ... }}
+
+Cancel a Booking
+Endpoint: PUT /:id/cancel
+
+Access: Private (Client or Artist associated with the booking)
+
+Success (200): {"message": "Booking successfully cancelled.", "data": { ... }}
+
+4.6 Reviews (/api/reviews)
+Create a Review
+Endpoint: POST /
+
+Access: Private (Client only)
+
+Request Body:
+
+{
+  "bookingId": "completed_booking_id",
+  "rating": 5,
+  "comment": "Fantastic job!"
+}
+
+Success (201): {"message": "Thank you for your review!", "data": { ... }}
+
+Error (400): Fails if booking is not "Completed" or has already been reviewed.
+
+Get Artist's Reviews
+Endpoint: GET /artist/:artistId
+
+Access: Public
+
+Success (200): {"count": 5, "averageRating": 4.8, "data": [ /* Array of Review objects */ ]}
+
+4.7 Admin (/api/admin)
+Get Pending Artists
+Endpoint: GET /artists/pending
+
+Access: Private (Admin only)
+
+Success (200): {"count": 1, "data": [ /* Array of ArtistProfile objects */ ]}
+
+Update Artist Status
+Endpoint: PUT /artists/:artistProfileId/status
+
+Access: Private (Admin only)
+
+Request Body:
+
+{
+  "status": "approved" // or "rejected"
+}
+
+Success (200): {"message": "Artist status successfully updated...", "data": { ... }}
+
+5. Real-Time Events (Socket.IO)
+The frontend should connect to the Socket.IO server at the base URL (ws://localhost:8888).
+
+Events to Emit (Frontend -> Backend)
+joinRoom
+
+Payload: userId (string)
+
+When: After a user logs in successfully.
+
+Action: Subscribes the user to their private notification room.
+
+socket.emit('joinRoom', user.id);
+
+Events to Listen For (Backend -> Frontend)
+new_booking_request (for Artists)
+
+Payload: { "message": "...", "booking": { ... } }
+
+Action: Notify the artist that a client has requested one of their services.
+
+booking_status_update (for Clients)
+
+Payload: { "message": "...", "booking": { ... } }
+
+Action: Notify the client that an artist has confirmed or completed their booking.
+
+booking_cancelled (for Clients or Artists)
+
+Payload: { "message": "...", "booking": { ... } }
+
+Action: Notify the other party that a booking has been cancelled.
+
+deposit_paid (for Artists)
+
+Payload: { "message": "..." }
+
+Action: Notify the artist that the client has successfully paid their deposit.
