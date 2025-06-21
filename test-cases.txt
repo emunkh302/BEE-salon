@@ -1,0 +1,461 @@
+How to Test
+After updating your controller with the code above, please follow these steps to ensure success:
+1.	Rebuild Your Project: This is the most important step. Run this command to ensure your running code matches your source code: 
+Bash
+npm run build
+2.	Restart Your Server: 
+Bash
+npm start
+3.	Use a Correct Postman Request: Send a POST request to http://localhost:8888/api/auth/register/artist with the complete body, making sure to include userName: 
+JSON
+{
+    "email": "betty.artist@example.com",
+    "password": "password123",
+    "firstName": "Betty",
+    "lastName": "Artist",
+    "userName": "bettytheartist",
+    "phoneNumber": "555-888-9999",
+    "experienceYears": 3
+}
+Following these steps should resolve the issue and allow you to successfully register artists.
+{ 
+  "message": "An account with this userName already exists." 
+} actually there is zero artist in DB test.artistprofiles 
+1. How to Test Login
+You can test the login endpoint using any user (client or artist) that you've successfully registered. However, remember that an artist must be "approved" to log in. Since we haven't built the approval system yet, you will only be able to log in as a client.
+Here are the details for your Thunder Client test:
+•	Method: POST
+•	URL: http://localhost:8888/api/auth/login
+•	Body (JSON): Provide the email and password of a client you created. For example: 
+JSON
+{
+    "email": "sandra01.c@example.com",
+    "password": "password123"
+}
+Expected Success Response (200 OK): You should get back a JSON object containing a token and the user's details.
+JSON
+{
+    "token": "a_very_long_jwt_string_here...",
+    "user": {
+        "id": "some_user_id",
+        "email": "sandra01.c@example.com",
+        "role": "client",
+        "firstName": "Sandra",
+        "lastName": "Client"
+    }
+}
+Prerequisites for Testing:
+1.	Register a New Artist: Make sure you have at least one artist registered whose status is "pending".
+2.	Login as Admin: Log in with your admin user account (admin@example.com) to get a valid admin JWT. You will need this token for all the following requests.
+ 
+Test Suite: Admin Artist Management
+Test Case 1: Get Pending Artists (As Admin)
+•	Objective: Verify that an admin can retrieve a list of all artists awaiting approval.
+•	Method: GET
+•	URL: http://localhost:8888/api/admin/artists/pending
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Paste the token from your admin login)
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object containing a count and a data array. The array should list all artists with status: "pending". Copy the _id of one of the artist profiles from this response for the next test case.
+Test Case 2: Approve an Artist (As Admin)
+•	Objective: Verify an admin can change an artist's status to "approved".
+•	Method: PUT
+•	URL: http://localhost:8888/api/admin/artists/{artistProfileId}/status 
+o	(Replace {artistProfileId} with the _id you copied from Test Case 1).
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the same admin token)
+•	Body (raw, JSON): 
+JSON
+{
+    "status": "approved"
+}
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object with a success message and the updated artist profile data showing status: "approved".
+Test Case 3: Login as the Newly Approved Artist
+•	Objective: Verify that the artist who was just approved can now successfully log in.
+•	Method: POST
+•	URL: http://localhost:8888/api/auth/login
+•	Body (raw, JSON): 
+JSON
+{
+    "email": "email_of_the_approved_artist@example.com",
+    "password": "their_password"
+}
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object containing a new JWT for the artist. This confirms the login logic that checks for the "approved" status is working.
+Test Case 4: Fail to Access Admin Route as Non-Admin
+•	Objective: Double-check that a regular client or artist cannot access these admin routes.
+•	Method: GET
+•	URL: http://localhost:8888/api/admin/artists/pending
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use a token from a client or an approved artist login)
+•	Expected Result: 
+o	Status Code: 403 Forbidden
+o	Response Body: A JSON object with a message like "User role 'client' is not authorized to access this route."
+Prerequisites for Testing:
+1.	Have an Approved Artist: Make sure you have an artist user who has been approved by an admin.
+2.	Login as that Artist: Use the /api/auth/login endpoint to log in as your approved artist. Copy the JWT token from the response. You will need this for all the following requests.
+ 
+Test Suite: Service Management (as an Artist)
+Test Case 1: Create a New Service (Success)
+•	Objective: Verify a logged-in artist can create a new service.
+•	Method: POST
+•	URL: http://localhost:8888/api/services
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Paste the token from your artist login)
+•	Body (raw, JSON): 
+JSON
+{
+    "category": "Nail",
+    "name": "Classic Gel Manicure",
+    "description": "A long-lasting gel polish manicure with cuticle care and a relaxing hand massage.",
+    "price": 4500,
+    "duration": 60
+}
+•	Expected Result: 
+o	Status Code: 201 Created
+o	Response Body: A JSON object with a success message and the data for the newly created service. Copy the _id of this new service for later tests.
+Test Case 2: Get All of My Services (Success)
+•	Objective: Verify an artist can retrieve a list of all the services they have created.
+•	Method: GET
+•	URL: http://localhost:8888/api/services/my-services
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the same artist token)
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object with a count and a data array listing all the services created by this artist.
+Test Case 3: Update a Service (Success)
+•	Objective: Verify an artist can update one of their existing services.
+•	Method: PUT
+•	URL: http://localhost:8888/api/services/{serviceId} 
+o	(Replace {serviceId} with the _id you copied from Test Case 1).
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the same artist token)
+•	Body (raw, JSON): (Update the price and description) 
+JSON
+{
+    "price": 5000,
+    "description": "An premium, long-lasting gel polish manicure with cuticle care and a relaxing hand massage."
+}
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object with a success message and the updated service data.
+Test Case 4: Delete a Service (Success)
+•	Objective: Verify an artist can delete one of their services.
+•	Method: DELETE
+•	URL: http://localhost:8888/api/services/{serviceId} 
+o	(Replace {serviceId} with the ID of the service you want to delete).
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the same artist token)
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: {"message": "Service deleted successfully."}
+Test Case 5: Fail to Access as a Client
+•	Objective: Ensure that a user with a client role cannot access these artist-only routes.
+•	Action: First, log in as a client to get a client JWT.
+•	Method: POST
+•	URL: http://localhost:8888/api/services
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the token from a client login)
+•	Body (raw, JSON): (Same as Test Case 1)
+•	Expected Result: 
+o	Status Code: 403 Forbidden
+o	Response Body: {"message": "User role 'client' is not authorized to access this route."}
+Prerequisites for Testing:
+1.	Have an Approved Artist: Make sure an admin has approved at least one artist.
+2.	Artist Must Have Services: Log in as that approved artist and use the /api/services endpoint to create at least one service. Copy the _id of the artist and one of their services.
+3.	Login as a Client: Log in as a client user to get a valid client JWT.
+ 
+Test Suite: Booking System
+Test Case 1: Client Creates a Booking (Success)
+•	Objective: Verify a logged-in client can successfully request a booking for an artist's service.
+•	Method: POST
+•	URL: http://localhost:8888/api/bookings
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Paste the token from your client login)
+•	Body (raw, JSON): 
+JSON
+{
+    "artistId": "artist_id_from_prerequisites",
+    "serviceId": "service_id_from_prerequisites",
+    "location": {
+        "address": "456 Oak Avenue",
+        "city": "Metropolis",
+        "state": "NY",
+        "zipCode": "10001"
+    },
+    "bookingTime": "2025-08-15T14:00:00.000Z",
+    "notes": "Please be on time, I have an event to attend."
+}
+•	Expected Result: 
+o	Status Code: 201 Created
+o	Response Body: A JSON object with a success message and the data for the new booking, which will have a status of "Pending".
+Test Case 2: Client Views Their Bookings (Success)
+•	Objective: Verify a client can see a list of all bookings they have made.
+•	Method: GET
+•	URL: http://localhost:8888/api/bookings/my-bookings
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the same client token)
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object with a count and a data array listing the booking(s) made by this client.
+Test Case 3: Artist Views Their Bookings (Success)
+•	Objective: Verify an artist can see a list of all bookings requested of them.
+•	Action: First, log in as the artist who was booked in Test Case 1 to get their JWT.
+•	Method: GET
+•	URL: http://localhost:8888/api/bookings/my-bookings
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the artist's token)
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object with a count and a data array listing the booking(s) assigned to this artist.
+Test Case 4: Fail to Create Booking as an Artist
+•	Objective: Ensure only clients can create bookings.
+•	Method: POST
+•	URL: http://localhost:8888/api/bookings
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the artist's token)
+•	Body (raw, JSON): (Same as Test Case 1)
+•	Expected Result: 
+o	Status Code: 403 Forbidden
+o	Response Body: {"message": "User role 'artist' is not authorized to access this route."}
+Test Suite: Booking Confirmation
+Prerequisites:
+1.	A client has successfully created a booking for an artist. The booking status is "Pending".
+2.	You have the _id of that specific booking.
+3.	You have logged in as the artist for that booking and have their JWT.
+ 
+Test Case: Artist Confirms a Booking (Success)
+•	Objective: Verify a logged-in artist can update a pending booking to "Confirmed".
+•	Method: PUT
+•	URL: http://localhost:8888/api/bookings/{bookingId}/status 
+o	(Replace {bookingId} with the ID of the pending booking).
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Paste the token from your artist login)
+•	Body (raw, JSON): 
+JSON
+{
+    "status": "Confirmed"
+}
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object with a success message and the updated booking data, showing "status": "Confirmed".
+Test Case: Fail to Update Another Artist's Booking
+•	Objective: Verify an artist cannot modify a booking that does not belong to them.
+•	Prerequisites: You need a booking ID that belongs to a different artist.
+•	Method: PUT
+•	URL: http://localhost:8888/api/bookings/{different_bookingId}/status
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the token from your current artist's login)
+•	Body (raw, JSON): 
+JSON
+{
+    "status": "Confirmed"
+}
+•	Expected Result: 
+o	Status Code: 403 Forbidden
+o	Response Body: {"message": "You are not authorized to update this booking."}
+Prerequisites for Testing:
+•	You have a booking that is currently in the "Confirmed" state. You will need the _id of this booking.
+•	You are able to log in as both the client and the artist associated with that booking to get their respective JWTs.
+ 
+Test Suite: Completing and Cancelling Bookings
+Test Case 1: Artist Marks Booking as "Completed" (Success)
+•	Objective: Verify an artist can mark a confirmed booking as complete.
+•	Method: PUT
+•	URL: http://localhost:8888/api/bookings/{bookingId}/status 
+o	(Replace {bookingId} with the ID of the confirmed booking).
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Paste the token from your artist login)
+•	Body (raw, JSON): 
+JSON
+{
+    "status": "Completed"
+}
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object with a success message and the updated booking data, showing "status": "Completed".
+Test Case 2: Client Cancels a Booking (Success)
+•	Objective: Verify a client can cancel a booking they created (that is not yet completed).
+•	Prerequisites: You'll need a different booking that is in the "Pending" or "Confirmed" state.
+•	Method: PUT
+•	URL: http://localhost:8888/api/bookings/{bookingId}/cancel
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the token from the client's login)
+•	Body: No body is required for this request.
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object with the message "Booking successfully cancelled." and the booking data showing "status": "Cancelled".
+Test Case 3: Artist Cancels a Booking (Success)
+•	Objective: Verify an artist can cancel a booking assigned to them.
+•	Prerequisites: Another booking that is in the "Pending" or "Confirmed" state.
+•	Method: PUT
+•	URL: http://localhost:8888/api/bookings/{bookingId}/cancel
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the token from the artist's login)
+•	Body: No body is required for this request.
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object with the message "Booking successfully cancelled."
+Test Case 4: Fail to Cancel a Completed Booking
+•	Objective: Ensure that a booking that is already marked "Completed" cannot be cancelled.
+•	Method: PUT
+•	URL: http://localhost:8888/api/bookings/{completedBookingId}/cancel 
+o	(Use the ID of the booking from Test Case 1).
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use either the client's or the artist's token)
+•	Expected Result: 
+o	Status Code: 400 Bad Request
+o	Response Body: {"message": "Cannot cancel a booking that is already Completed."}
+Prerequisites for Testing:
+1.	Have a Completed Booking: You need a booking that has a status of "Completed". To get this: 
+o	A client books a service with an artist.
+o	The artist confirms the booking ("status": "Confirmed").
+o	The artist marks the booking as complete ("status": "Completed").
+2.	You will need the _id of this completed booking.
+3.	You will need the _id of the artist from that booking.
+4.	You need to be logged in as the client from that booking to get their JWT.
+ 
+Test Suite: Ratings and Reviews
+Test Case 1: Client Submits a Review (Success)
+•	Objective: Verify a client can successfully submit a review for a booking they have completed.
+•	Method: POST
+•	URL: http://localhost:8888/api/reviews
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Paste the token from your client login)
+•	Body (raw, JSON): 
+JSON
+{
+    "bookingId": "the_id_of_the_completed_booking",
+    "rating": 5,
+    "comment": "Amazing service! The artist was very professional and did a fantastic job. Highly recommended."
+}
+•	Expected Result: 
+o	Status Code: 201 Created
+o	Response Body: A JSON object with a success message and the data for the newly created review.
+Test Case 2: View Artist's Reviews (Public)
+•	Objective: Verify that anyone can view the reviews for a specific artist.
+•	Method: GET
+•	URL: http://localhost:8888/api/reviews/artist/{artistId} 
+o	(Replace {artistId} with the ID of the artist who was reviewed in Test Case 1).
+•	Authorization: Set to "No Auth".
+•	Expected Result: 
+o	Status Code: 200 OK
+o	Response Body: A JSON object containing the count of reviews, the averageRating, and a data array listing the review(s) for that artist.
+Test Case 3: Fail to Review an Incomplete Booking
+•	Objective: Ensure a client cannot review a booking that is still "Pending" or "Confirmed".
+•	Prerequisites: You need the ID of a booking that is not completed.
+•	Method: POST
+•	URL: http://localhost:8888/api/reviews
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the same client token)
+•	Body (raw, JSON): 
+JSON
+{
+    "bookingId": "id_of_a_pending_or_confirmed_booking",
+    "rating": 4
+}
+•	Expected Result: 
+o	Status Code: 400 Bad Request
+o	Response Body: {"message": "You can only review completed bookings."}
+Test Case 4: Fail to Review the Same Booking Twice
+•	Objective: Verify a booking can only be reviewed one time.
+•	Method: POST
+•	URL: http://localhost:8888/api/reviews
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Use the same client token)
+•	Body (raw, JSON): (Use the same bookingId from the successful Test Case 1) 
+JSON
+{
+    "bookingId": "the_id_of_the_completed_booking",
+    "rating": 3,
+    "comment": "Trying to review again."
+}
+•	Expected Result: 
+o	Status Code: 400 Bad Request
+o	Response Body: {"message": "This booking has already been reviewed."}
+You have now built a complete system that handles:
+•	User & Artist Registration
+•	Admin Approval Workflow
+•	Login & JWT Authentication
+•	Service Management for Artists
+•	A full Booking Lifecycle (Request, Confirm, Complete, Cancel)
+•	A Ratings and Reviews system
+1.	Real-Time Communication: Implement Socket.IO for in-app chat between clients and artists.
+2.	Payment Integration: Integrate Stripe to handle the 20% deposit during booking.
+3.	Search & Discovery: Create a public API endpoint for clients to search for artists based on service, location, etc.
+4.	Notifications: Add email or SMS notifications using a service like Twilio or Nodemailer for booking confirmations and reminders.
+Test Cases
+The test cases for this refactored code are exactly the same as the previous ones, as all functionality has been preserved. You can run the same tests for creating, viewing, updating, and cancelling bookings to verify that everything still works as expected.
+Summary of Key Tests:
+1.	Client Creates Booking: POST /api/bookings with a valid artist/service.
+2.	Client/Artist Views Bookings: GET /api/bookings/my-bookings (should work for both roles).
+3.	Artist Updates Status: PUT /api/bookings/{id}/status with {"status": "Confirmed"}.
+4.	Artist Updates Status Again: PUT /api/bookings/{id}/status with {"status": "Completed"}.
+5.	Client or Artist Cancels Booking: PUT /api/bookings/{id}/cancel.
+6.	Authorization Checks: Ensure a client cannot update status, and users cannot cancel bookings that aren't theirs.
+
+Prerequisites for Testing:
+1.	Stripe Secret Key: Ensure your STRIPE_SECRET_KEY is set correctly in your .env file.
+2.	Artist & Service: Have an approved artist with at least one service created. You'll need the _id for both the artist and the service.
+3.	Login as Client: Log in as a client to get their JWT.
+ 
+Test Suite: Booking with Payment Intent
+Test Case: Client Creates a Booking and Gets a Payment Intent
+•	Objective: Verify that when a client creates a booking, the system successfully communicates with Stripe to create a Payment Intent and returns the necessary client_secret.
+•	Method: POST
+•	URL: http://localhost:8888/api/bookings
+•	Authorization: 
+o	Type: Bearer Token
+o	Token: (Paste the token from your client login)
+•	Body (raw, JSON): 
+JSON
+{
+    "artistId": "artist_id_from_prerequisites",
+    "serviceId": "service_id_from_prerequisites",
+    "location": {
+        "address": "789 Pine Street",
+        "city": "Gotham",
+        "state": "NJ",
+        "zipCode": "07001"
+    },
+    "bookingTime": "2025-09-20T11:00:00.000Z"
+}
+•	Expected Result: 
+o	Status Code: 201 Created
+o	Response Body: A JSON object that now includes a paymentIntentClientSecret. This is the crucial part to verify. The response should look like this: 
+JSON
+{
+    "message": "Booking request created. Please complete the deposit payment.",
+    "booking": {
+        // ... booking details ...
+        "depositStatus": "Pending",
+        "stripePaymentIntentId": "pi_..." // A new Stripe Payment Intent ID
+    },
+    "paymentIntentClientSecret": "pi_..._secret_..." // A long, secret key from Stripe
+}
+If you receive this response, it means the backend has successfully integrated with Stripe. The next step in a full application would be to handle webhooks from Stripe to update the depositStatus to "Paid" after the client uses the client_secret to complete their payment on the frontend.
