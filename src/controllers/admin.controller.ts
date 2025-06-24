@@ -1,4 +1,3 @@
-// src/controllers/admin.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import ArtistProfile, { ArtistStatus } from '../models/ArtistProfile.model';
 import User from '../models/User.model';

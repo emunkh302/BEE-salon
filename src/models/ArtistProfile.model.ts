@@ -1,4 +1,3 @@
-// src/models/ArtistProfile.model.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export enum ArtistStatus {

@@ -1,4 +1,3 @@
-// src/controllers/review.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import Review from '../models/Review.model';
 import Booking, { BookingStatus } from '../models/Booking.model';

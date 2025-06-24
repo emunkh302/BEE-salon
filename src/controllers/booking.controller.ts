@@ -1,4 +1,3 @@
-// src/controllers/booking.controller.ts
 import { Request, Response } from 'express';
 import Booking from '../models/Booking.model';
 import Service, { IService } from '../models/Service.model';
@@ -29,7 +28,6 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
     const paymentIntent = await stripe.paymentIntents.create({
         amount: depositAmount,
         currency: 'usd',
-        // FIX: Add this object to disable redirect-based payment methods for this transaction.
         automatic_payment_methods: {
             enabled: true,
             allow_redirects: 'never',
@@ -67,8 +65,6 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
 };
 
 
-// Other controller functions (getMyBookings, etc.) remain unchanged.
-// ...
 export const getMyBookings = async (req: Request, res: Response): Promise<void> => { /* ... */ };
 export const updateBookingStatus = async (req: Request, res: Response): Promise<void> => { /* ... */ };
 export const cancelBooking = async (req: Request, res: Response): Promise<void> => { /* ... */ };

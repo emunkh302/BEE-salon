@@ -1,4 +1,3 @@
-// src/models/Service.model.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export enum ServiceCategory {

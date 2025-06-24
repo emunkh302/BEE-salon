@@ -1,4 +1,3 @@
-// src/controllers/service.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import Service, { IService } from '../models/Service.model';
 import mongoose from 'mongoose';

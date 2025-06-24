@@ -1,10 +1,8 @@
-// src/controllers/auth.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { AuthService, IRegisterClientData, IRegisterArtistData, ILoginData } from '../services/auth.service';
 
 const authService = new AuthService();
 
-// This controller is working correctly.
 export const registerClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { email, password, firstName, lastName, phoneNumber } = req.body;

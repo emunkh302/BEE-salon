@@ -1,6 +1,4 @@
-// src/models/Booking.model.ts
 import mongoose, { Schema, Document } from 'mongoose';
-
 export enum BookingStatus {
     PENDING = 'Pending',
     CONFIRMED = 'Confirmed',
@@ -29,10 +27,8 @@ export interface IBooking extends Document {
     depositAmount: number;
     totalAmount: number;
     notes?: string;
-    // --- New Fields ---
     depositStatus: DepositStatus;
     stripePaymentIntentId?: string; // To store the ID from Stripe
-    // ------------------
     createdAt: Date;
     updatedAt: Date;
 }
@@ -54,7 +50,6 @@ const BookingSchema: Schema<IBooking> = new Schema({
     depositAmount: { type: Number, required: true, min: 0 },
     totalAmount: { type: Number, required: true, min: 0 },
     notes: { type: String, trim: true },
-    // --- New Fields ---
     depositStatus: {
         type: String,
         enum: Object.values(DepositStatus),

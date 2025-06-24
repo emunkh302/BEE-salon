@@ -1,4 +1,3 @@
-// src/socket.ts
 import { Server, Socket } from 'socket.io';
 
 const initializeSocket = (io: Server) => {

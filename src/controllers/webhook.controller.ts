@@ -1,4 +1,3 @@
-// src/controllers/webhook.controller.ts
 import { Request, Response } from 'express';
 import Stripe from 'stripe';
 import Booking, { DepositStatus } from '../models/Booking.model';

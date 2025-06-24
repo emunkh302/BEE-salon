@@ -1,4 +1,3 @@
-// src/routes/admin.routes.ts
 import { Router } from 'express';
 import { getPendingArtists, updateArtistStatus } from '../controllers/admin.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
