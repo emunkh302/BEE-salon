@@ -1,17 +1,18 @@
+// src/controllers/service.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import Service, { IService } from '../models/Service.model';
 import mongoose from 'mongoose';
 
-// @desc    Create a new service for the logged-in artist
+// @desc    Create a new service for a specific artist
 // @route   POST /api/services
-// @access  Private/Artist
+// @access  Private/Admin
 export const createService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { category, name, description, price, duration } = req.body;
-        const artistId = req.user?._id; // Get artist ID from the 'protect' middleware
+        // UPDATED: Admin must provide the artistId in the request body
+        const { artistId, category, name, description, price, duration } = req.body;
 
-        if (!category || !name || !price || !duration) {
-            res.status(400).json({ message: 'Category, name, price, and duration are required.' });
+        if (!artistId || !category || !name || !price || !duration) {
+            res.status(400).json({ message: 'Artist ID, category, name, price, and duration are required.' });
             return;
         }
 
@@ -25,7 +26,7 @@ export const createService = async (req: Request, res: Response, next: NextFunct
         });
 
         res.status(201).json({
-            message: 'Service created successfully.',
+            message: 'Service created successfully for the artist.',
             data: newService
         });
 
@@ -34,12 +35,12 @@ export const createService = async (req: Request, res: Response, next: NextFunct
     }
 };
 
-// @desc    Get all services for the logged-in artist
-// @route   GET /api/services/my-services
-// @access  Private/Artist
-export const getMyServices = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+// @desc    Get all services for a specific artist (can be used by admin or public)
+// @route   GET /api/services/artist/:artistId
+// @access  Public
+export const getArtistServices = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const artistId = req.user?._id;
+        const artistId = req.params.artistId;
         const services = await Service.find({ artist: artistId });
 
         res.status(200).json({
@@ -51,33 +52,23 @@ export const getMyServices = async (req: Request, res: Response, next: NextFunct
     }
 };
 
-// @desc    Update a specific service owned by the logged-in artist
+// @desc    Update a specific service
 // @route   PUT /api/services/:id
-// @access  Private/Artist
+// @access  Private/Admin
 export const updateService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const serviceId = req.params.id;
-        const artistId = req.user?._id;
 
-        // Find the service by its ID
-        const service = await Service.findById(serviceId);
-
-        if (!service) {
-            res.status(404).json({ message: 'Service not found.' });
-            return;
-        }
-
-        // Ensure the logged-in user is the owner of the service
-        if (service.artist.toString() !== artistId?.toString()) {
-            res.status(403).json({ message: 'User not authorized to update this service.' });
-            return;
-        }
-
-        // Update the service with the new data
+        // UPDATED: Ownership check is removed as only admin can access this.
         const updatedService = await Service.findByIdAndUpdate(serviceId, req.body, {
             new: true,
             runValidators: true
         });
+
+        if (!updatedService) {
+            res.status(404).json({ message: 'Service not found.' });
+            return;
+        }
 
         res.status(200).json({
             message: 'Service updated successfully.',
@@ -89,14 +80,14 @@ export const updateService = async (req: Request, res: Response, next: NextFunct
     }
 };
 
-// @desc    Delete a specific service owned by the logged-in artist
+// @desc    Delete a specific service
 // @route   DELETE /api/services/:id
-// @access  Private/Artist
+// @access  Private/Admin
 export const deleteService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const serviceId = req.params.id;
-        const artistId = req.user?._id;
 
+        // UPDATED: Ownership check is removed.
         const service = await Service.findById(serviceId);
 
         if (!service) {
@@ -104,12 +95,6 @@ export const deleteService = async (req: Request, res: Response, next: NextFunct
             return;
         }
 
-        if (service.artist.toString() !== artistId?.toString()) {
-            res.status(403).json({ message: 'User not authorized to delete this service.' });
-            return;
-        }
-
-        // We use deleteOne() here which is more direct than findByIdAndRemove
         await service.deleteOne();
 
         res.status(200).json({ message: 'Service deleted successfully.' });
