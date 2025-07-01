@@ -3,21 +3,38 @@ import { AuthService, IRegisterClientData, IRegisterArtistData, ILoginData } fro
 
 const authService = new AuthService();
 
+// --- Controller for Client Registration ---
 export const registerClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { email, password, firstName, lastName, phoneNumber } = req.body;
-        if (!email || !password || !firstName || !lastName || !phoneNumber) {
-            res.status(400).json({ message: 'All fields are required for client registration.' });
+        // FIX: Add a check to ensure req.body exists before destructuring
+        if (!req.body) {
+            res.status(400).json({ message: 'Missing form data.' });
             return;
         }
-        const clientData: IRegisterClientData = { email, password_to_hash: password, firstName, lastName, phoneNumber };
+        const { email, password, firstName, lastName, phoneNumber } = req.body;
+        
+        const profileImagePath = req.file ? req.file.path : undefined;
+
+        if (!email || !password || !firstName || !lastName || !phoneNumber) {
+            res.status(400).json({ message: 'All required text fields must be provided.' });
+            return;
+        }
+        
+        const clientData: IRegisterClientData = { 
+            email, 
+            password_to_hash: password, 
+            firstName, 
+            lastName, 
+            phoneNumber,
+            profileImage: profileImagePath
+        };
+        
         const newClient = await authService.registerClient(clientData);
         res.status(201).json({ message: 'Client registered successfully.', user: newClient });
 
     } catch (error: any) {
         if (error.name === 'MongoServerError' && error.code === 11000) {
-            const field = Object.keys(error.keyValue)[0];
-            res.status(409).json({ message: `An account with this ${field} already exists.` });
+            res.status(409).json({ message: 'An account with this email already exists.' });
             return;
         }
         next(error);
@@ -25,27 +42,39 @@ export const registerClient = async (req: Request, res: Response, next: NextFunc
 };
 
 // --- Controller for Artist Registration ---
-// This is the controller that needs careful review.
 export const registerArtist = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        // 1. Ensure 'userName' is being correctly extracted from the request body.
+        // FIX: Add a check to ensure req.body exists
+        if (!req.body) {
+            res.status(400).json({ message: 'Missing form data.' });
+            return;
+        }
         const { email, password, firstName, lastName, phoneNumber, userName, experienceYears } = req.body;
+        
+        const profileImagePath = req.file ? req.file.path : undefined;
 
-        // 2. Add 'userName' to the validation check. This is a critical step.
         if (!email || !password || !firstName || !lastName || !phoneNumber || !userName || experienceYears === undefined) {
-            res.status(400).json({ message: 'All fields, including userName and experience years, are required for artist registration.' });
+            res.status(400).json({ message: 'All required text fields must be provided.' });
             return;
         }
         
-        // 3. Ensure 'userName' is included when passing data to the service.
-        const artistData: IRegisterArtistData = { email, password_to_hash: password, firstName, lastName, phoneNumber, userName, experienceYears };
-        const newArtist = await authService.registerArtist(artistData);
+        const artistData: IRegisterArtistData = { 
+            email, 
+            password_to_hash: password, 
+            firstName, 
+            lastName, 
+            phoneNumber, 
+            userName, 
+            experienceYears,
+            profileImage: profileImagePath
+        };
         
+        const newArtist = await authService.registerArtist(artistData);
         res.status(201).json({ message: 'Artist registration submitted successfully. Awaiting admin approval.', user: newArtist });
 
     } catch (error: any) {
+        const field = Object.keys(error.keyValue || {})[0];
         if (error.name === 'MongoServerError' && error.code === 11000) {
-            const field = Object.keys(error.keyValue)[0];
             res.status(409).json({ message: `An account with this ${field} already exists.` });
             return;
         }
@@ -53,8 +82,7 @@ export const registerArtist = async (req: Request, res: Response, next: NextFunc
     }
 };
 
-
-// Login controller
+// --- Login Controller (Unchanged) ---
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { email, password } = req.body;
@@ -65,7 +93,6 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
         const loginData: ILoginData = { email, password_from_user: password };
         const loginResponse = await authService.loginUser(loginData);
         res.status(200).json(loginResponse);
-
     } catch (error: any) {
         if (error.message.includes('Invalid credentials') || error.message.includes('deactivated') || error.message.includes('not yet approved')) {
             res.status(401).json({ message: error.message });

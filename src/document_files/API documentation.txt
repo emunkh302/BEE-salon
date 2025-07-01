@@ -155,14 +155,17 @@ Access: Private (Any logged-in user)
 Success (200): {"user": { ... }} (Full User document from database)
 
 4.4 Service Management (/api/services)
+Note: All service creation and modification actions are now restricted to Admins.
+
 Create a Service
 Endpoint: POST /
 
-Access: Private (Artist only)
+Access: Private (Admin only)
 
 Request Body:
 
 {
+  "artistId": "artist_user_id_to_assign_service_to",
   "category": "Nail",
   "name": "Acrylic Full Set",
   "description": "Full set of acrylic nails with choice of shape and color.",
@@ -170,19 +173,19 @@ Request Body:
   "duration": 90
 }
 
-Success (201): {"message": "Service created successfully.", "data": { ... }}
+Success (201): {"message": "Service created successfully for the artist.", "data": { ... }}
 
-Get My Services
-Endpoint: GET /my-services
+Get an Artist's Services
+Endpoint: GET /artist/:artistId
 
-Access: Private (Artist only)
+Access: Public
 
 Success (200): {"count": 2, "data": [ /* Array of Service objects */ ]}
 
 Update a Service
 Endpoint: PUT /:id
 
-Access: Private (Artist only)
+Access: Private (Admin only)
 
 Request Body: (Any fields from the Service model you want to change)
 
@@ -195,7 +198,7 @@ Success (200): {"message": "Service updated successfully.", "data": { ... }}
 Delete a Service
 Endpoint: DELETE /:id
 
-Access: Private (Artist only)
+Access: Private (Admin only)
 
 Success (200): {"message": "Service deleted successfully."}
 
